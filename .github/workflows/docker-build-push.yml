@@ -25,4 +25,5 @@ jobs:
     - name: Build and push Docker image
       run: |
         docker compose -p rasp build
+        docker tag rasp-server:latest sohamd22/rasp:latest
         docker push sohamd22/rasp
