@@ -15,6 +15,7 @@ services:
       NODE_ENV: production
     ports:
       - 5000:5000
+    image: sohamd22/rasp:latest
     env_file:
       - .env
 
