@@ -110,6 +110,7 @@ const searchUser = async (req, res, next) => {
       name: user.name,
       photo: user.photo,
       email: user.email,
+      about: user.about
     }));
 
     res.json(formattedUsers);
