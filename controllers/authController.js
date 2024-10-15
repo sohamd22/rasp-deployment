@@ -49,7 +49,7 @@ const callback = async (req, res) => {
       sameSite: 'strict',
     });
 
-    return res.redirect(`/`);
+    return res.redirect(`http://localhost:5173/`);
   } catch (error) {
     console.error('Error authenticating user:', error);
     return res.redirect('/signin'); 

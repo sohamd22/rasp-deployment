@@ -29,10 +29,14 @@ app.use(cookieParser());
 // Use api routes
 app.use('/api', apiRouter);
 
+app.get('/signin', (req, res) => {
+  res.redirect('/signin');
+});
+
 // Setup Socket.io
 const io = new Server(server, {
   cors: {
-    origin: "/",
+    origin: "http://localhost:5173",
     methods: ["GET", "POST"]
   }
 });

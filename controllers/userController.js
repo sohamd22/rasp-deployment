@@ -59,7 +59,7 @@ const saveUser = async (req, res, next) => {
     const status = await Status.findOne({ user: user._id });
 
     const userText = `
-      ${userData.about.gender} from ASU ${userData.about.campus} campus.\n
+      ${userData.name} is a ${userData.about.gender} from ASU ${userData.about.campus} campus.\n
       Bio: ${userData.about.bio} \n
       Skills: ${userData.about.skills.join(", ")} \n
       Hobbies: ${userData.about.hobbies.join(", ")} \n
@@ -86,17 +86,6 @@ const saveUser = async (req, res, next) => {
   }
 }
 
-
-// const slidingWindowChunking = (text, windowSize = 100, stepSize = 50) => {
-//   const tokenizer = new natural.WordTokenizer();
-//   const tokens = tokenizer.tokenize(text);
-//   const chunks = [];
-//   for (let i = 0; i < tokens.length; i += stepSize) {
-//     chunks.push(tokens.slice(i, i + windowSize).join(' '));
-//   }
-//   return chunks;
-// };
-
 const searchUser = async (req, res, next) => {
   const userId = req.body.user._id;
   const now = Date.now();
@@ -116,12 +105,11 @@ const searchUser = async (req, res, next) => {
     const queryVector = await getEmbedding(req.body.query);
     const retrievedUsers = await User.vectorSearch(queryVector, 10);
 
-    const formattedUsers = retrievedUsers.filter(user => user._id.toString() !== userId).map(user => ({
+    const formattedUsers = retrievedUsers.filter(user => user._id.toString() !== userId && user.score > 0.7).map(user => ({
+      _id: user._id,
       name: user.name,
-      email: user.email,
       photo: user.photo,
-      relevantInfo: `${user.about.gender} from ASU ${user.about.campus} campus. Bio: ${user.about.bio}`,
-      score: user.score
+      email: user.email,
     }));
 
     res.json(formattedUsers);
