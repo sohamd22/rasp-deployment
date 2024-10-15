@@ -61,8 +61,6 @@ const getMessages = async (req, res) => {
     .sort({ timestamp: -1 })
     .skip(skip)
     .limit(limit);
-  
-  console.log(messages);
 
   res.json(messages.reverse());
 }
