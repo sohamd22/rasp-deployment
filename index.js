@@ -6,7 +6,7 @@ import { Server } from "socket.io";
 import bodyParser from 'body-parser';
 
 import apiRouter from './api.js';
-import { setConnectedClient, removeConnectedClient, emitToConnectedClient } from './utils/connectedClients.js';
+import { setConnectedClient, removeConnectedClient } from './utils/connectedClients.js';
 
 import dotenv from "dotenv";
 dotenv.config();
