@@ -37,10 +37,6 @@ const io = new Server(server, {
   }
 });
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '/dist/index.html'));
-});
-
 io.on('connection', (socket) => {
   const { userId } = socket.handshake.query;
 
