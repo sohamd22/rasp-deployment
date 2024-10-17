@@ -11,7 +11,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const userCooldowns = new Map();
-const COOLDOWN_DURATION = 60000;
+const COOLDOWN_DURATION = 20000;
 
 const statusCooldowns = new Map();
 const profileCooldowns = new Map();
