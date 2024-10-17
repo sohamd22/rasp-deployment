@@ -112,12 +112,17 @@ const searchUser = async (req, res, next) => {
     const queryVector = await getEmbedding(req.body.query);
     const retrievedDocs = await User.vectorSearch(queryVector, 10);
 
+    const llmContext = []
+    
+    for (const doc of retrievedDocs.filter(doc => doc._id.toString() !== userId.toString())) {
+      const { photo, ...rest } = doc;
+      const status = await Status.findOne({ user: doc._id });
+      llmContext.push({ ...rest, status: status?.content });
+    }
+
     const prompt = `
       Query: ${req.body.query}
-      Context: ${JSON.stringify(retrievedDocs.filter(doc => doc._id.toString() !== userId.toString()).map(doc => {
-        const { photo, ...rest } = doc;
-        return rest;
-      }))}
+      Context: ${JSON.stringify(llmContext)}
       Array:
     `;
 
@@ -164,8 +169,8 @@ const searchUser = async (req, res, next) => {
 }
 
 const getUserStatus = async (req, res, next) => {
-  const status = await Status.findOne({ userId: req.params.userId });
-  res.json(status);
+  const status = await Status.findOne({ user: req.params.userId });
+  res.json({ status: status?.content, expirationDate: status?.expirationDate, duration: status?.duration });
 }
 
 const setUserStatus = async (req, res, next) => {
@@ -180,24 +185,20 @@ const setUserStatus = async (req, res, next) => {
   }
 
   const duration = req.body.duration;
-  const expirationDate = 
-    duration == "24h" ? 
-    new Date(Date.now() + 24 * 60 * 60 * 1000) : (
-      duration == "48h" ? 
-      new Date(Date.now() + 2 * 24 * 60 * 60 * 1000) :
-      new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-    );
+  const expirationDate = req.body.expirationDate;
   let status = await Status.findOne({ user: req.body.userId });
   if (status) {
     status.content = req.body.status;
     status.expirationDate = expirationDate;
+    status.duration = duration;
     status.save();
   }
   else {
     status = await Status.create({
       user: req.body.userId,
       content: req.body.status,
-      expirationDate
+      expirationDate,
+      duration
     });
   }
 
@@ -215,10 +216,13 @@ const setUserStatus = async (req, res, next) => {
   `.trim();
 
   user.statusId = status._id;
+  user.status = req.body.status;
   const chunks = chunkText(userText);
   const embedding = await getEmbedding(chunks);
   user.embedding = embedding;  
   await user.save();
+
+  console.log("User status has been saved");
 
   res
     .status(201)
@@ -240,10 +244,26 @@ statusChangeStream.on('change', async (change) => {
   if (change.operationType !== 'delete') return;
   const statusId = change.documentKey._id;
   const user = await User.findOne({ statusId });
+  user.statusId = null;
+  user.status = "";
+  await user.save();
 
   if(user) {
     emitToConnectedClient(user._id.toString(), 'status-delete', { content: "", duration: "" });
   }  
 });
 
-export { saveUser, searchUser, setUserStatus, getUserStatus };
+const getCommunityUsers = async (req, res) => {
+  try {
+    const users = await User.find({ 
+      statusId: { $ne: null },
+    });
+
+    res.json(users);
+  } catch (error) {
+    console.error('Error fetching community users:', error);
+    res.status(500).json({ error: 'An error occurred while fetching community users' });
+  }
+};
+
+export { saveUser, searchUser, setUserStatus, getUserStatus, getCommunityUsers };

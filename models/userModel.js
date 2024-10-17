@@ -6,6 +6,10 @@ const statusSchema = new mongoose.Schema({
         type: Date,
         required: true
     },
+    duration: {
+        type: String,
+        required: true
+    },
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
@@ -41,6 +45,11 @@ const userSchema = new mongoose.Schema({
     statusId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Status"
+    },
+    status: String,
+    isInDevspace: {
+      type: Boolean,
+      default: false
     },
     embedding: []
 });
