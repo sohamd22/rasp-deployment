@@ -39,7 +39,24 @@ const callback = async (req, res) => {
 
     // Check if the email ends with @asu.edu
     if (!user.email.endsWith('@asu.edu')) {
-      return res.redirect('/');
+      try {
+        const session = workos.userManagement.loadSealedSession({
+          sessionData: sealedSession,
+        cookiePassword: process.env.WORKOS_COOKIE_PASSWORD,
+      });
+    
+        const url = await session.getLogoutUrl();
+    
+        res.clearCookie('wos-session');
+        res.redirect(url);
+      }
+      catch (error) {
+        console.error(error);
+        return res.redirect('/');
+      }
+      finally {
+        return;
+      }
     }
 
     let dbUser = await User.findOne({ email: user.email });
