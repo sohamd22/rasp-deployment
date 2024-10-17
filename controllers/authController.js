@@ -37,6 +37,11 @@ const callback = async (req, res) => {
 
     const { user, sealedSession } = authenticateResponse;
 
+    // Check if the email ends with @asu.edu
+    // if (!user.email.endsWith('@asu.edu')) {
+    //   return res.redirect('/signin?error=invalid_email');
+    // }
+
     let dbUser = await User.findOne({ email: user.email });
     if (!dbUser) {
       dbUser = await User.create({ email: user.email, name: user.firstName + " " + user.lastName, photo: user.profilePictureUrl });
