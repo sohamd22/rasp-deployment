@@ -39,7 +39,7 @@ const callback = async (req, res) => {
 
     // Check if the email ends with @asu.edu
     if (!user.email.endsWith('@asu.edu')) {
-      return res.redirect('/signin?error=invalid_email');
+      return res.redirect('/');
     }
 
     let dbUser = await User.findOne({ email: user.email });
