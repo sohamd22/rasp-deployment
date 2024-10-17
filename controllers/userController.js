@@ -94,7 +94,8 @@ const llm = new ChatGoogleGenerativeAI({
 });
 
 const searchUser = async (req, res, next) => {
-  const userId = req.body.user._id;
+  const userId = req.body.userId;
+  
   const now = Date.now();
   const lastRequestTime = userCooldowns.get(userId) || 0;
 
@@ -116,8 +117,7 @@ const searchUser = async (req, res, next) => {
     
     for (const doc of retrievedDocs.filter(doc => doc._id.toString() !== userId.toString())) {
       const { photo, ...rest } = doc;
-      const status = await Status.findOne({ user: doc._id });
-      llmContext.push({ ...rest, status: status?.content });
+      llmContext.push(rest);
     }
 
     const prompt = `
@@ -147,8 +147,6 @@ const searchUser = async (req, res, next) => {
       console.error(error);
       retrievedUsers = [];
     }
-
-    console.log(retrievedUsers);
 
     const users = [];
     for (const retrievedUser of retrievedUsers) {

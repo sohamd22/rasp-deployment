@@ -71,6 +71,8 @@ userSchema.statics.vectorSearch = function(queryVector, limit = 10) {
           email: 1,
           photo: 1,
           about: 1,
+          status: 1,
+          isInDevspace: 1,
           score: { $meta: "vectorSearchScore" }
         }
       }

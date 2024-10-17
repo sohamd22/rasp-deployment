@@ -1,14 +1,13 @@
 import express from 'express';
-import { User } from '../models/userModel.js';
+import { joinDevspace, sendInvitation, cancelInvitation, acceptInvitation, rejectInvitation, getDevspaceInfo } from '../controllers/devspaceController.js';
 
 const router = express.Router();
 
-router.post('/join', async (req, res) => {
-    const { userId } = req.body;
-    const user = await User.findById(userId);
-    if (!user) {
-        return res.status(404).json({ error: 'User not found' });
-    }
-});
+router.post('/join', joinDevspace);
+router.post('/send-invitation', sendInvitation);
+router.post('/cancel-invitation', cancelInvitation);
+router.post('/accept-invitation', acceptInvitation);
+router.post('/reject-invitation', rejectInvitation);
+router.get('/info/:userId', getDevspaceInfo);
 
 export default router;
