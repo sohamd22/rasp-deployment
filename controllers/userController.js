@@ -15,8 +15,8 @@ const COOLDOWN_DURATION = 5000;
 
 const statusCooldowns = new Map();
 const profileCooldowns = new Map();
-const STATUS_COOLDOWN_DURATION = 60000; // 1 minute
-const PROFILE_COOLDOWN_DURATION = 60000; // 1 minute
+const STATUS_COOLDOWN_DURATION = 120000; // 2 minutes
+const PROFILE_COOLDOWN_DURATION = 300000; // 5 minutes
 
 const checkCooldown = (cooldownMap, userId, cooldownDuration) => {
   const now = Date.now();
