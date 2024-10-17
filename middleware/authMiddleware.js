@@ -7,8 +7,9 @@ const workos = new WorkOS(process.env.WORKOS_API_KEY, {
 });
 
 const withAuth = async (req, res, next) => {
-  const session = workos.userManagement.loadSealedSession({
-    sessionData: req.cookies['wos-session'],
+  try {
+    const session = workos.userManagement.loadSealedSession({
+      sessionData: req.cookies['wos-session'],
     cookiePassword: process.env.WORKOS_COOKIE_PASSWORD,
   });
 
@@ -21,6 +22,11 @@ const withAuth = async (req, res, next) => {
   if (!authenticated && reason === 'no_session_cookie_provided') {
     return res.redirect('/signin');
   }
+}
+catch (error) {
+  console.error(error);
+  res.status(500).json({ error: 'An error occurred while authenticating' });
+}
 
   try {
     const { authenticated, sealedSession } = await session.refresh();

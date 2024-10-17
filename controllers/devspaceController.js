@@ -4,7 +4,8 @@ import { emitToConnectedClient } from '../utils/connectedClients.js';
 
 const joinDevspace = async (req, res) => {
     const { userId } = req.body;
-    const user = await User.findById(userId);
+    try {
+        const user = await User.findById(userId);
 
     if (!user) {
         return res.status(404).json({ error: 'User not found' });
@@ -19,16 +20,22 @@ const joinDevspace = async (req, res) => {
         team: [],
         pendingInvitations: [],
         sentInvitations: []
-    });
+        });
 
-    res.status(200).json({ user, devspace });
+        res.status(200).json({ user, devspace });
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'An error occurred while joining the Devspace' });
+    }
 }
 
 const sendInvitation = async (req, res) => {
     const { senderId, receiverId } = req.body;
 
-    const senderDevspace = await Devspace.findOne({ user: senderId });
-    const receiverDevspace = await Devspace.findOne({ user: receiverId });
+    try {
+        const senderDevspace = await Devspace.findOne({ user: senderId });
+        const receiverDevspace = await Devspace.findOne({ user: receiverId });
 
     if (!senderDevspace || !receiverDevspace) {
         return res.status(404).json({ error: 'One or both users are not in Devspace' });
@@ -47,20 +54,26 @@ const sendInvitation = async (req, res) => {
         teamMembers: [...senderDevspace.team, senderId]
     });
 
-    // Add invitation to sender's sent invitations
-    senderDevspace.sentInvitations.push({ to: receiverId });
+        // Add invitation to sender's sent invitations
+        senderDevspace.sentInvitations.push({ to: receiverId });
 
-    await receiverDevspace.save();
+        await receiverDevspace.save();
     await senderDevspace.save();
 
     res.status(200).json({ message: 'Invitation sent successfully' });
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'An error occurred while sending the invitation' });
+    }
 }
 
 const cancelInvitation = async (req, res) => {
     const { receiverId, userId } = req.body;
 
-    const senderDevspace = await Devspace.findOne({ user: userId });
-    const receiverDevspace = await Devspace.findOne({ user: receiverId });
+    try {
+        const senderDevspace = await Devspace.findOne({ user: userId });
+        const receiverDevspace = await Devspace.findOne({ user: receiverId });
 
     if (!senderDevspace || !receiverDevspace) {
         return res.status(404).json({ error: 'One or both users are not in Devspace' });
@@ -80,13 +93,19 @@ const cancelInvitation = async (req, res) => {
     await receiverDevspace.save();
 
     res.status(200).json({ message: 'Invitation cancelled successfully' });
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'An error occurred while cancelling the invitation' });
+    }
 }
 
 const acceptInvitation = async (req, res) => {
     const { userId, invitationId } = req.body;
 
-    const userDevspace = await Devspace.findOne({ user: userId });
-    if (!userDevspace) {
+    try {
+        const userDevspace = await Devspace.findOne({ user: userId });
+        if (!userDevspace) {
         return res.status(404).json({ error: 'User not found in Devspace' });
     }
 
@@ -123,13 +142,19 @@ const acceptInvitation = async (req, res) => {
     }
 
     res.status(200).json({ message: 'Invitation accepted', team: userDevspace.team });
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'An error occurred while accepting the invitation' });
+    }
 }
 
 const rejectInvitation = async (req, res) => {
     const { userId, invitationId } = req.body;
 
-    const userDevspace = await Devspace.findOne({ user: userId });
-    if (!userDevspace) {
+    try {
+        const userDevspace = await Devspace.findOne({ user: userId });
+        if (!userDevspace) {
         return res.status(404).json({ error: 'User not found in Devspace' });
     }
 
@@ -147,18 +172,24 @@ const rejectInvitation = async (req, res) => {
             }
         }
     }
-    
+
     userDevspace.pendingInvitations.pull(invitationId);
     await userDevspace.save();
 
     res.status(200).json({ message: 'Invitation rejected' });
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'An error occurred while rejecting the invitation' });
+    }
 }
 
 const getDevspaceInfo = async (req, res) => {
     const { userId } = req.params;
 
-    const devspace = await Devspace.findOne({ user: userId })
-        .populate('team', 'name email photo')
+    try {
+        const devspace = await Devspace.findOne({ user: userId })
+            .populate('team', 'name email photo')
         .populate('pendingInvitations.from', 'name email photo')
         .populate('sentInvitations.to', 'name email photo');
 
@@ -167,18 +198,29 @@ const getDevspaceInfo = async (req, res) => {
     }
 
     res.status(200).json(devspace);
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'An error occurred while fetching the Devspace info' });
+    }
 }
 
 const devspaceChangeStream = Devspace.watch();
 devspaceChangeStream.on('change', async (change) => {
   if (change.operationType === 'update') {
-    const updatedDevspace = await Devspace.findById(change.documentKey._id)
-      .populate('team', 'name email photo')
+    try {
+        const updatedDevspace = await Devspace.findById(change.documentKey._id)
+            .populate('team', 'name email photo')
       .populate('pendingInvitations.from', 'name email photo')
       .populate('sentInvitations.to', 'name email photo');
     if (updatedDevspace) {
         console.log(updatedDevspace);
-      emitToConnectedClient(updatedDevspace.user.toString(), 'devspace-update', updatedDevspace);
+            emitToConnectedClient(updatedDevspace.user.toString(), 'devspace-update', updatedDevspace);
+        }
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'An error occurred while updating the Devspace' });
     }
   }
 });

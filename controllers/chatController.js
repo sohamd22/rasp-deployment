@@ -18,8 +18,9 @@ const checkMessageCooldown = (userId) => {
 };
 
 const getChats = async (req, res) => {
-  const chatDocuments = await Chat.find({ 
-    users: { $all: [req.params.userId] },
+  try {
+    const chatDocuments = await Chat.find({ 
+      users: { $all: [req.params.userId] },
     'messages.0': { $exists: true }  // This ensures at least one message exists
   });
   const chats = [];
@@ -27,14 +28,15 @@ const getChats = async (req, res) => {
     const otherUser = await User.findById(chat.users.find(userId => userId != req.params.userId));
     chats.push({
       _id: chat._id,
-      users: chat.users,
-      groupName: chat.groupName,
-      isGroupChat: chat.isGroupChat,
-      pendingApprovals: chat.pendingApprovals,
-      lastMessage: chat.lastMessage,
-      otherUserName: otherUser?.name
-    });
-  }
+        users: chat.users,
+        groupName: chat.groupName,
+        isGroupChat: chat.isGroupChat,
+        pendingApprovals: chat.pendingApprovals,
+        lastMessage: chat.lastMessage,
+        otherUserName: otherUser?.name
+      });
+    }
+  
   
   // Sort chats, handling null lastMessage
   chats.sort((a, b) => {
@@ -42,8 +44,13 @@ const getChats = async (req, res) => {
     if (!b.lastMessage) return -1; // Move chats without lastMessage to the end
     return b.lastMessage.timestamp - a.lastMessage.timestamp;
   });
-  
-  res.json(chats);
+    
+    res.json(chats);
+  }
+  catch (error) {
+  console.error(error);
+    res.status(500).json({ error: 'An error occurred while fetching the chats' });
+  }
 }
 
 const getMessages = async (req, res) => {
@@ -51,8 +58,9 @@ const getMessages = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 50;
 
-  const chat = await Chat.findById(chatId);
-  if (!chat) {
+  try {
+    const chat = await Chat.findById(chatId);
+    if (!chat) {
     return res.status(404).json({ message: 'Chat not found' });
   }
 
@@ -62,7 +70,12 @@ const getMessages = async (req, res) => {
     .skip(skip)
     .limit(limit);
 
-  res.json(messages.reverse());
+    res.json(messages.reverse());
+  }
+  catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'An error occurred while fetching the messages' });
+  }
 }
 
 const saveMessage = async (req, res) => {
@@ -76,8 +89,9 @@ const saveMessage = async (req, res) => {
     });
   }
 
-  const chat = await Chat.findById(req.params.chatId);
-  if (!chat) {
+  try {
+    const chat = await Chat.findById(req.params.chatId);
+    if (!chat) {
     return res.status(404).json({ message: 'Chat not found' });
   }
 
@@ -117,7 +131,12 @@ const saveMessage = async (req, res) => {
   });
   await chat.save();
   
-  res.status(201).json(newMessage);
+    res.status(201).json(newMessage);
+  }
+  catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'An error occurred while saving the message' });
+  }
 }
 
 
@@ -129,9 +148,10 @@ const createChat = async (req, res) => {
     return acc;
   }, {});
 
-  // Check if a non-group chat already exists between these users
-  if (!isGroupChat) {
-    const existingChat = await Chat.findOne({
+  try {
+    // Check if a non-group chat already exists between these users
+    if (!isGroupChat) {
+      const existingChat = await Chat.findOne({
       users: { $all: users, $size: 2 },
       isGroupChat: false
     });
@@ -151,15 +171,21 @@ const createChat = async (req, res) => {
     unreadMessages
   });
 
-  res.status(201).json(chat);
+    res.status(201).json(chat);
+  }
+  catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'An error occurred while creating the chat' });
+  }
 }
 
 const messageChangeStream = Message.watch();
 messageChangeStream.on('change', async (change) => {
   if(change.operationType !== 'insert') return;
 
-  const message = await Message.findById(change.fullDocument._id);
-  const chat = await Chat.findById(message.chat).populate('users', 'name');
+  try {
+    const message = await Message.findById(change.fullDocument._id);
+    const chat = await Chat.findById(message.chat).populate('users', 'name');
 
   const lastMessage = {
     messageId: message._id,
@@ -187,6 +213,11 @@ messageChangeStream.on('change', async (change) => {
     emitToConnectedClient(user._id.toString(), 'message', message);
     emitToConnectedClient(user._id.toString(), 'chat', changedChat);
   });
+  }
+  catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'An error occurred while updating the chat' });
+  }
 });
 
 const markChatAsRead = async (req, res) => {

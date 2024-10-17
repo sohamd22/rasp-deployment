@@ -82,15 +82,21 @@ const getUser = async (req, res) => {
 };
 
 const logout = async (req, res) => {
-  const session = workos.userManagement.loadSealedSession({
-    sessionData: req.cookies['wos-session'],
+  try {
+    const session = workos.userManagement.loadSealedSession({
+      sessionData: req.cookies['wos-session'],
     cookiePassword: process.env.WORKOS_COOKIE_PASSWORD,
   });
 
   const url = await session.getLogoutUrl();
 
   res.clearCookie('wos-session');
-  res.redirect(url);
+    res.redirect(url);
+  }
+  catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'An error occurred while logging out' });
+  }
 };
 
 const checkAuth = (req, res) => {

@@ -11,7 +11,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const userCooldowns = new Map();
-const COOLDOWN_DURATION = 5000;
+const COOLDOWN_DURATION = 60000;
 
 const statusCooldowns = new Map();
 const profileCooldowns = new Map();
@@ -165,8 +165,14 @@ const searchUser = async (req, res, next) => {
 }
 
 const getUserStatus = async (req, res, next) => {
-  const status = await Status.findOne({ user: req.params.userId });
-  res.json({ status: status?.content, expirationDate: status?.expirationDate, duration: status?.duration });
+  try {
+    const status = await Status.findOne({ user: req.params.userId });
+    res.json({ status: status?.content, expirationDate: status?.expirationDate, duration: status?.duration });
+  }
+  catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'An error occurred while fetching the user status' });
+  }
 }
 
 const setUserStatus = async (req, res, next) => {
@@ -180,16 +186,23 @@ const setUserStatus = async (req, res, next) => {
     });
   }
 
+  if (!req.body.status || !req.body.duration || !req.body.expirationDate) {
+    return res.status(400).json({ error: 'Status and duration are required' });
+  }
+
   const duration = req.body.duration;
   const expirationDate = req.body.expirationDate;
-  let status = await Status.findOne({ user: req.body.userId });
-  if (status) {
-    status.content = req.body.status;
-    status.expirationDate = expirationDate;
-    status.duration = duration;
-    status.save();
-  }
-  else {
+
+  try {
+    let status = await Status.findOne({ user: req.body.userId });
+
+    if (status) {
+      status.content = req.body.status;
+      status.expirationDate = expirationDate;
+      status.duration = duration;
+      status.save();
+    }
+    else {
     status = await Status.create({
       user: req.body.userId,
       content: req.body.status,
@@ -216,35 +229,52 @@ const setUserStatus = async (req, res, next) => {
   user.embedding = embedding;  
   await user.save();
 
-  console.log("User status has been saved");
+    console.log("User status has been saved");
 
-  res
+    res
     .status(201)
     .json({ message: "User status has been saved" });
   next();
+  }
+  catch (error) {
+    console.error(error);
+
+    res.status(500).json({ error: 'An error occurred while saving the user status' });
+  }
+
+  
 }
 
 const userChangeStream = User.watch();
 userChangeStream.on('change', async (change) => {
   const userId = change.documentKey._id;
+  try {
+    const user = await User.findById(userId);
 
-  const user = await User.findById(userId);
-
-  emitToConnectedClient(userId.toString(), 'user-update', user);
+    emitToConnectedClient(userId.toString(), 'user-update', user);
+  }
+  catch (error) {
+    console.error(error);
+  }
 });
 
 const statusChangeStream = Status.watch();
 statusChangeStream.on('change', async (change) => {
   if (change.operationType !== 'delete') return;
   const statusId = change.documentKey._id;
-  const user = await User.findOne({ statusId });
-  user.statusId = null;
-  user.status = "";
-  await user.save();
+  try {
+    const user = await User.findOne({ statusId });
+    user.statusId = null;
+    user.status = "";
+    await user.save();
 
   if(user) {
-    emitToConnectedClient(user._id.toString(), 'status-delete', { content: "", duration: "" });
-  }  
+      emitToConnectedClient(user._id.toString(), 'status-delete', { content: "", duration: "" });
+    }  
+  }
+  catch (error) {
+    console.error(error);
+  }
 });
 
 const getCommunityUsers = async (req, res) => {
