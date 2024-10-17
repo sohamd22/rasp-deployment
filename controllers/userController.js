@@ -214,7 +214,7 @@ const setUserStatus = async (req, res, next) => {
   const user = await User.findById(req.body.userId);
 
   const userText = `
-  ${userData.name} is a ${user.about.gender} gender from ASU ${user.about.campus} campus.\n
+  ${user.name} is a ${user.about.gender} gender from ASU ${user.about.campus} campus.\n
     Bio: ${user.about.bio} \n
     Skills: ${user.about.skills.join(", ")} \n
     Hobbies: ${user.about.hobbies.join(", ")} \n
