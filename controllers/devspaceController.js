@@ -115,8 +115,8 @@ const acceptInvitation = async (req, res) => {
         if (memberId.toString() !== userId.toString()) {
             const memberDevspace = await Devspace.findOne({ user: memberId });
             if (memberDevspace) {
-                memberDevspace.team = userDevspace.team;
-                memberDevspace.sentInvitations = [];
+                memberDevspace.team.push(userId);
+                memberDevspace.sentInvitations = memberDevspace.sentInvitations.filter(inv => inv.to.toString() !== userId.toString());
                 await memberDevspace.save();
             }
         }

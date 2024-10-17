@@ -60,13 +60,11 @@ const saveUser = async (req, res, next) => {
     const status = await Status.findOne({ user: user._id });
 
     const userText = `
-      ${userData.name} is a ${userData.about.gender} from ASU ${userData.about.campus} campus.\n
+      ${userData.name} is a ${userData.about.gender} gender from ASU ${userData.about.campus} campus.\n
       Bio: ${userData.about.bio} \n
       Skills: ${userData.about.skills.join(", ")} \n
       Hobbies: ${userData.about.hobbies.join(", ")} \n
       Socials: ${userData.about.socials.join(", ")} \n
-      Projects: ${userData.about.projects} \n
-      Experience: ${userData.about.experience} \n
       ${ status ? `Status: ${status}` : "" }
     `.trim();
 
@@ -203,13 +201,11 @@ const setUserStatus = async (req, res, next) => {
   const user = await User.findById(req.body.userId);
 
   const userText = `
-    ${user.about.gender} from ASU ${user.about.campus} campus.\n
+  ${userData.name} is a ${user.about.gender} gender from ASU ${user.about.campus} campus.\n
     Bio: ${user.about.bio} \n
     Skills: ${user.about.skills.join(", ")} \n
     Hobbies: ${user.about.hobbies.join(", ")} \n
     Socials: ${user.about.socials.join(", ")} \n
-    Projects: ${user.about.projects} \n
-    Experience: ${user.about.experience} \n
     Status: ${req.body.status} \n
   `.trim();
 
