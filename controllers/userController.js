@@ -3,6 +3,7 @@
 import natural from "natural";
 
 import { User, Status } from "../models/userModel.js";
+import Devspace from "../models/devspaceModel.js";
 import { emitToConnectedClient } from '../utils/connectedClients.js';
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import getEmbedding from '../utils/getEmbedding.js';
@@ -278,16 +279,30 @@ statusChangeStream.on('change', async (change) => {
 });
 
 const getCommunityUsers = async (req, res) => {
-  try {
-    const users = await User.find({ 
-      statusId: { $ne: null },
-    });
-
-    res.json(users);
-  } catch (error) {
-    console.error('Error fetching community users:', error);
-    res.status(500).json({ error: 'An error occurred while fetching community users' });
-  }
+    try {
+        const users = await User.find({
+            $or: [
+                { status: { $exists: true, $ne: '' } },
+                { isInDevspace: true }
+            ]
+        });
+        const usersWithDevspace = await Promise.all(
+            users.map(async (user) => {
+                const devspace = await Devspace.findOne({ user: user._id });
+                return {
+                    ...user.toObject(),
+                    idea: devspace?.idea || null
+                };
+            })
+        );
+        const filteredUsers = usersWithDevspace.filter(user => 
+            user.status || (user.idea && user.idea.title)
+        );
+        res.status(200).json(filteredUsers);
+    } catch (error) {
+        console.error('Error fetching community users:', error);
+        res.status(500).json({ error: 'Failed to fetch community users' });
+    }
 };
 
 export { saveUser, searchUser, setUserStatus, getUserStatus, getCommunityUsers };

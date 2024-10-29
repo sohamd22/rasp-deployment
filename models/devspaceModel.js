@@ -26,7 +26,17 @@ const devspaceSchema = new mongoose.Schema({
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User'
     }
-  }]
+  }],
+  idea: {
+    title: {
+      type: String,
+      default: ''
+    },
+    description: {
+      type: String,
+      default: ''
+    }
+  }
 });
 
 const Devspace = mongoose.model('Devspace', devspaceSchema);

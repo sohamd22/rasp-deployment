@@ -135,6 +135,8 @@ const acceptInvitation = async (req, res) => {
             const memberDevspace = await Devspace.findOne({ user: memberId });
             if (memberDevspace) {
                 memberDevspace.team.push(userId);
+                memberDevspace.idea = memberDevspace.idea.title ? memberDevspace.idea : userDevspace.idea;
+                userDevspace.idea = memberDevspace.idea;
                 memberDevspace.sentInvitations = memberDevspace.sentInvitations.filter(inv => inv.to.toString() !== userId.toString());
                 await memberDevspace.save();
             }
@@ -225,4 +227,32 @@ devspaceChangeStream.on('change', async (change) => {
   }
 });
 
-export { joinDevspace, sendInvitation, cancelInvitation, acceptInvitation, rejectInvitation, getDevspaceInfo };
+const updateIdea = async (req, res) => {
+    const { userId, title, description } = req.body;
+
+    try {
+        const userDevspace = await Devspace.findOne({ user: userId });
+        if (!userDevspace) {
+            return res.status(404).json({ error: 'User not found in Devspace' });
+        }
+
+        userDevspace.idea = { title, description };
+        await userDevspace.save();
+
+        // Update idea for all team members
+        for (const memberId of userDevspace.team) {
+            const memberDevspace = await Devspace.findOne({ user: memberId });
+            if (memberDevspace) {
+                memberDevspace.idea = { title, description };
+                await memberDevspace.save();
+            }
+        }
+
+        res.status(200).json({ message: 'Idea updated successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'An error occurred while updating the idea' });
+    }
+}
+
+export { joinDevspace, sendInvitation, cancelInvitation, acceptInvitation, rejectInvitation, getDevspaceInfo, updateIdea };
