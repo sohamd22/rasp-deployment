@@ -44,7 +44,7 @@ const sendInvitation = async (req, res) => {
     const currentTeamSize = senderDevspace.team.length;
     const currentSentInvitations = senderDevspace.sentInvitations.length;
 
-    if (currentTeamSize + currentSentInvitations >= 3) {
+    if (currentTeamSize + currentSentInvitations >= 4) {
         return res.status(400).json({ error: 'Maximum team size or invitation limit reached' });
     }
 
@@ -115,7 +115,7 @@ const acceptInvitation = async (req, res) => {
     }
 
     if (invitation.teamMembers.length > 4) {
-        return res.status(400).json({ error: 'Team size would exceed the maximum of 4 members' });
+        return res.status(400).json({ error: 'Team size would exceed the maximum of 5 members' });
     }
 
     // Add user to the team
